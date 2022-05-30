@@ -19,7 +19,7 @@ services:
     command:
       - '-log.level=debug'
     ports:
-      - 0.0.0.0:8000:80
+      - 8000:80
     environment:
       JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
       JAEGER_TAGS: job=tns/db
@@ -37,7 +37,7 @@ services:
     links:
       - db
     ports:
-      - 0.0.0.0:8001:80
+      - 8001:80
     environment:
       JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
       JAEGER_TAGS: job=tns/app
@@ -55,7 +55,7 @@ services:
     links:
       - app
     ports:
-      - 0.0.0.0:8002:80
+      - 8002:80
     environment:
       JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
       JAEGER_TAGS: job=tns/loadgen
@@ -77,13 +77,13 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_DISABLE_LOGIN_FORM=true
     ports:
-      - 0.0.0.0:3000:3000
+      - 3000:3000
     labels:
       namespace: monitoring
     logging: *default-logging
 
   prometheus:
-    image: prom/prometheus:v2.30.3
+    image: prom/prometheus:latest
     user: root
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -92,6 +92,7 @@ services:
       - --enable-feature=exemplar-storage
       - --log.level=debug
       - --web.enable-admin-api
+      - --web.enable-remote-write-receiver
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yml
     links:
@@ -99,7 +100,7 @@ services:
       - db
       - loadgen
     ports:
-      - 0.0.0.0:9090:9090
+      - 9090:9090
     labels:
       namespace: monitoring
     logging: *default-logging
@@ -117,7 +118,6 @@ services:
     labels:
       namespace: monitoring
     logging: *default-logging
-
   node_exporter:
     image: prom/node-exporter:v1.1.0
     container_name: node_exporter
@@ -149,6 +149,7 @@ services:
   tempo:
     image: grafana/tempo:latest
     command:
+      - --config.file=/etc/tempo.yaml
       - --target=all
       - --search.enabled=true
       - --storage.trace.backend=local
@@ -156,7 +157,9 @@ services:
       - --auth.enabled=false
       - --compactor.compaction.block-retention=24h
     ports:
-      - '8004:80'
+      - '3200:3200'
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
     labels:
       namespace: monitoring
     logging: *default-logging
