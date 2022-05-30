@@ -14,7 +14,6 @@ x-logging: &default-logging
 
 version: '3.4'
 services:
-
   db:
     image: grafana/tns-db:842bd3b
     command:
@@ -67,17 +66,18 @@ services:
     logging: *default-logging
 
   grafana:
-    image: grafana/grafana:8.2.2
+    image: grafana/grafana-oss:9.0.0-beta1
     volumes:
       - ./datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
       - ./dashboards:/etc/grafana/dashboards
+      - ./grafana.ini:/etc/grafana/grafana.ini
     environment:
-     - GF_AUTH_ANONYMOUS_ENABLED=true
-     - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-     - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
     ports:
-     - 0.0.0.0:3000:3000
+      - 0.0.0.0:3000:3000
     labels:
       namespace: monitoring
     logging: *default-logging
@@ -141,21 +141,22 @@ services:
       - -table-manager.retention-period=1d
       - -table-manager.retention-deletes-enabled=true
     ports:
-      - "3100:3100"
+      - '3100:3100'
     labels:
       namespace: monitoring
     logging: *default-logging
 
   tempo:
-    image: grafana/tempo:1.1.0
+    image: grafana/tempo:latest
     command:
       - --target=all
+      - --search.enabled=true
       - --storage.trace.backend=local
       - --storage.trace.local.path=/var/tempo
       - --auth.enabled=false
       - --compactor.compaction.block-retention=24h
     ports:
-      - "8004:80"
+      - '8004:80'
     labels:
       namespace: monitoring
     logging: *default-logging
